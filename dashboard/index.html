@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Owner Dashboard</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',Arial,sans-serif}
+:root{
+  --bg:#0f1e2d;--bg1:#162636;--bg2:#1a3a5c;--bg3:#0a1826;--bg4:#0d1f2e;
+  --border:#1e3a52;--border2:#2a6496;
+  --text:#e0f0ff;--text2:#aed6f1;--text3:#5d8aa8;--text4:#7ec8f0;
+  --green:#2ecc71;--yellow:#f1c40f;--red:#e74c3c;--orange:#e67e22;--purple:#8e44ad;
+  --accent:#1a5c8a;--accent2:#1e6fa8;
+  --green-bg:#1a4a2a;--yellow-bg:#4a3a00;--red-bg:#4a1a1a;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-size:13px}
+#app{display:none;flex-direction:column;height:100vh;overflow:hidden}
+#app.on{display:flex}
+
+/* ── setup / login ── */
+.gatewrap{position:fixed;inset:0;display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:30px 14px;background:radial-gradient(circle at top, #16324a, #0a1420)}
+.gatebox{background:var(--bg1);border:1px solid var(--border2);border-radius:10px;padding:28px;width:min(400px,94vw);box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.gatetitle{font-size:19px;font-weight:700;color:var(--text4);text-align:center;margin-bottom:4px}
+.gatesub{font-size:11px;color:var(--text3);text-align:center;margin-bottom:20px;line-height:1.5}
+.fg{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
+.fg label{font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.03em}
+.fg input,.fg select,.fg textarea{background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:#fff;font-size:13px;padding:0 10px;height:36px;outline:none;width:100%;transition:border-color .15s}
+.fg textarea{height:60px;padding:8px 10px;resize:vertical}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:#5dade2}
+.btn{height:36px;border:none;border-radius:4px;font-size:12px;font-weight:600;cursor:pointer;padding:0 16px;transition:filter .1s}
+.btn:hover{filter:brightness(1.15)}
+.btn-b{background:var(--accent);color:#fff}
+.btn-g{background:#1a6e3a;color:#fff}
+.btn-r{background:#962d22;color:#fff}
+.btn-o{background:#b7770d;color:#fff}
+.btn-ghost{background:var(--bg2);color:var(--text4);border:1px solid var(--border)}
+.btn-full{width:100%}
+.gateerr{font-size:11px;color:var(--red);text-align:center;min-height:15px;margin-top:8px}
+.gatelink{font-size:10px;color:var(--text3);text-align:center;margin-top:14px;cursor:pointer;text-decoration:underline}
+.gatehint{font-size:10px;color:var(--text3);background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:8px 10px;line-height:1.6;margin-bottom:14px}
+
+/* ── shell ── */
+.topbar{display:flex;align-items:center;gap:10px;padding:8px 16px;background:var(--bg2);border-bottom:1px solid var(--bg3);flex-shrink:0;min-height:44px}
+.topbar .ttl{font-size:14px;font-weight:700;color:var(--text4);display:flex;align-items:center;gap:8px}
+.topbar .sub{font-size:10px;color:var(--text2);background:rgba(255,255,255,.08);padding:2px 8px;border-radius:8px}
+.topbar .spacer{flex:1}
+.topbar .who{font-size:11px;color:var(--text2)}
+.topbar button{height:28px;font-size:11px}
+
+.tabs{display:flex;gap:2px;background:var(--bg4);border-bottom:1px solid var(--bg3);flex-shrink:0;overflow-x:auto}
+.tab{padding:9px 16px;font-size:11px;font-weight:600;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;display:flex;align-items:center;gap:5px}
+.tab.on{color:var(--text4);border-bottom-color:#5dade2;background:var(--bg)}
+.tab:hover:not(.on){color:var(--text2)}
+.tab .badge{background:var(--red-bg);color:var(--red);font-size:9px;padding:1px 6px;border-radius:8px;font-weight:700}
+
+.panels{flex:1;overflow-y:auto;padding:16px}
+.panel{display:none}
+.panel.on{display:block}
+
+/* ── cards / grids ── */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+.stat{background:var(--bg1);border:1px solid var(--border);border-radius:6px;padding:12px 14px}
+.stat .l{font-size:10px;color:var(--text3);font-weight:600;margin-bottom:5px;text-transform:uppercase;letter-spacing:.03em}
+.stat .v{font-size:20px;font-weight:700;color:var(--text);font-family:'Courier New',monospace}
+.stat .s{font-size:10px;color:var(--text3);margin-top:3px}
+.stat.warn .v{color:var(--yellow)}
+.stat.bad .v{color:var(--red)}
+.stat.good .v{color:var(--green)}
+
+.card{background:var(--bg1);border:1px solid var(--border);border-radius:6px;padding:14px;margin-bottom:14px}
+.card h3{font-size:12px;font-weight:700;color:var(--text4);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.card h3 .actions{display:flex;gap:6px;flex-wrap:wrap}
+
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+.toolbar input,.toolbar select{height:30px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:#fff;font-size:11px;padding:0 8px;outline:none}
+.toolbar .grow{flex:1;min-width:160px}
+
+table{width:100%;border-collapse:collapse;font-size:11px}
+thead th{position:sticky;top:0;background:var(--bg2);padding:6px 8px;text-align:left;font-weight:600;color:var(--text4);border-bottom:1px solid var(--bg3);white-space:nowrap;font-size:10px;text-transform:uppercase;letter-spacing:.02em}
+thead th.r{text-align:right}
+tbody tr:nth-child(even){background:var(--bg4)}
+tbody tr:hover{background:#1a3a55}
+tbody td{padding:6px 8px;border-bottom:1px solid var(--bg3);color:var(--text2);vertical-align:middle}
+td.r{text-align:right;font-family:'Courier New',monospace}
+.twrap{overflow-x:auto;max-width:100%}
+.empty{padding:30px;text-align:center;color:var(--text3);font-size:12px}
+
+.badge{font-size:9px;padding:2px 7px;border-radius:8px;font-weight:600;white-space:nowrap;display:inline-block}
+.b-green{background:var(--green-bg);color:var(--green)}
+.b-yellow{background:var(--yellow-bg);color:var(--yellow)}
+.b-red{background:var(--red-bg);color:var(--red)}
+.b-gray{background:var(--bg2);color:var(--text4)}
+
+.rowbtn{background:none;border:1px solid var(--border);border-radius:3px;color:var(--text4);font-size:9px;padding:3px 7px;cursor:pointer;margin-right:3px}
+.rowbtn:hover{background:var(--bg3)}
+.rowbtn.danger{border-color:#4a1a1a;color:var(--red)}
+.rowbtn.good{border-color:#1e5c32;color:var(--green)}
+
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:520px){.g2{grid-template-columns:1fr}}
+
+/* ── modal ── */
+.moverlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:none;align-items:flex-start;justify-content:center;overflow-y:auto;padding:30px 12px}
+.moverlay.on{display:flex}
+.mbox{background:var(--bg1);border:1px solid var(--border2);border-radius:8px;padding:18px;width:min(420px,94vw);box-shadow:0 16px 48px rgba(0,0,0,.5)}
+.mhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.mtitle{font-size:13px;font-weight:700;color:var(--text4)}
+.mx{background:none;border:none;color:var(--red);font-size:20px;cursor:pointer;line-height:1}
+
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#0a1826;padding:8px 18px;border-radius:4px;font-size:12px;z-index:999;opacity:0;transition:opacity .25s;pointer-events:none;border:1px solid var(--green);color:var(--green);max-width:88vw;text-align:center}
+.spin{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.25);border-top-color:#fff;border-radius:50%;animation:sp 0.7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.hint{font-size:10px;color:var(--text3);line-height:1.6;margin-bottom:10px}
+.note{font-size:10px;color:var(--text3);background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:8px 10px;line-height:1.6;margin-bottom:12px}
+.warnbox{font-size:10px;color:#f0b27a;background:#2a1a0a;border:1px solid #5a3a1a;border-radius:4px;padding:8px 10px;line-height:1.6;margin-bottom:12px}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+
+<div class="moverlay" id="mw"></div>
+<div class="toast" id="toast"></div>
+
+<!-- ══════ SETUP (first run — Project URL / anon key / Store ID) ══════ -->
+<div class="gatewrap" id="setupScr">
+  <div class="gatebox">
+    <div class="gatetitle">&#127970; Owner Dashboard</div>
+    <div class="gatesub">Connect this dashboard to your store's Supabase project. These three values come from the SQL setup step and Project Settings &rarr; API.</div>
+    <div class="fg"><label>Project URL</label><input id="su-url" placeholder="https://xxxxxxxx.supabase.co" autocomplete="off" /></div>
+    <div class="fg"><label>Anon / publishable key</label><input id="su-key" placeholder="eyJhbGciOiJIUzI1NiIs..." autocomplete="off" /></div>
+    <div class="fg"><label>Store ID (uuid)</label><input id="su-store" placeholder="00000000-0000-0000-0000-000000000000" autocomplete="off" /></div>
+    <div class="gatehint">This dashboard never stores your password. It is typed in each time you sign in below and kept only in this browser tab's memory.</div>
+    <button class="btn btn-b btn-full" onclick="saveSetup()">Continue &rarr;</button>
+    <div class="gateerr" id="setupErr"></div>
+  </div>
+</div>
+
+<!-- ══════ LOGIN ══════ -->
+<div class="gatewrap" id="loginScr" style="display:none">
+  <div class="gatebox">
+    <div class="gatetitle" id="loginStoreName">&#127970; Owner Dashboard</div>
+    <div class="gatesub" id="loginSub">Sign in with your login to manage this store.</div>
+    <div style="display:flex;gap:6px;margin-bottom:16px">
+      <button type="button" class="btn btn-b" id="modeSigninBtn" style="flex:1" onclick="setLoginMode('signin')">Sign in</button>
+      <button type="button" class="btn btn-ghost" id="modeRegisterBtn" style="flex:1" onclick="setLoginMode('register')">Create account</button>
+    </div>
+    <div class="fg"><label>Email</label><input id="li-email" placeholder="owner@yourstore.local" autocomplete="off" /></div>
+    <div class="fg"><label>Password</label><input id="li-pass" type="password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" autocomplete="off" /></div>
+    <div class="fg" id="regConfirmWrap" style="display:none"><label>Confirm password</label><input id="li-pass2" type="password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" autocomplete="off" /></div>
+    <div class="fg" id="regCodeWrap" style="display:none"><label>Setup code</label><input id="li-code" placeholder="shown when the store was created in the SQL step" autocomplete="off" /></div>
+    <button class="btn btn-b btn-full" onclick="doLoginOrRegister()" id="loginBtn">Sign in</button>
+    <div class="gateerr" id="loginErr"></div>
+    <div class="gatelink" id="changeConn" onclick="showSetup(true)">Change project / store connection</div>
+  </div>
+</div>
+
+<!-- ══════ APP SHELL ══════ -->
+<div id="app">
+  <div class="topbar">
+    <div class="ttl"><span id="tbEmoji">&#127970;</span> <span id="tbStoreName">My Store</span></div>
+    <span class="sub">Owner Dashboard</span>
+    <div class="spacer"></div>
+    <span class="who" id="tbWho"></span>
+    <button class="btn btn-ghost" onclick="refreshAll()" title="Refresh all data">&#8635; Refresh</button>
+    <button class="btn btn-ghost" onclick="doLogout()">&#8594; Sign out</button>
+  </div>
+
+  <div class="tabs" id="tabs">
+    <div class="tab on" data-tab="overview" onclick="showTab('overview')">&#128200; Overview</div>
+    <div class="tab" data-tab="sales" onclick="showTab('sales')">&#128176; Sales</div>
+    <div class="tab" data-tab="stock" onclick="showTab('stock')">&#128230; Stock</div>
+    <div class="tab" data-tab="discounts" onclick="showTab('discounts')">&#127991; Discounts</div>
+    <div class="tab" data-tab="approvals" onclick="showTab('approvals')">&#9888; Approvals <span class="badge" id="apprBadge" style="display:none">0</span></div>
+    <div class="tab" data-tab="customers" onclick="showTab('customers')">&#128101; Customers</div>
+    <div class="tab" data-tab="terminals" onclick="showTab('terminals')">&#128421; Terminals</div>
+    <div class="tab" data-tab="settings" onclick="showTab('settings')">&#9881; Settings</div>
+    <div class="tab" data-tab="reports" onclick="showTab('reports')">&#128196; Reports</div>
+  </div>
+
+  <div class="panels">
+
+    <!-- OVERVIEW -->
+    <div class="panel on" id="p-overview">
+      <div class="stats" id="ovStats"></div>
+      <div class="card">
+        <h3><span>&#128197; Daily sales (last 14 business days)</span></h3>
+        <div class="twrap"><table>
+          <thead><tr><th>Date</th><th class="r">Sales</th><th class="r">Gross</th><th class="r">Returns</th><th class="r">Voids</th></tr></thead>
+          <tbody id="ovDaily"></tbody>
+        </table></div>
+      </div>
+      <div class="g2">
+        <div class="card"><h3>&#9888; Low / out of stock</h3><div id="ovLow"></div></div>
+        <div class="card"><h3>&#9203; Pending approvals</h3><div id="ovAppr"></div></div>
+      </div>
+    </div>
+
+    <!-- SALES -->
+    <div class="panel" id="p-sales">
+      <div class="toolbar">
+        <input class="grow" id="salQ" placeholder="Search invoice, cashier, customer..." oninput="renderSales()" />
+        <select id="salTill" onchange="loadSales()"><option value="">All terminals</option></select>
+        <select id="salType" onchange="renderSales()"><option value="">All types</option><option value="sale">Sale</option><option value="void">Void</option><option value="return">Return</option></select>
+        <input type="date" id="salFrom" onchange="loadSales()" />
+        <input type="date" id="salTo" onchange="loadSales()" />
+        <button class="btn btn-b" onclick="exportSalesCsv()">&#11015; CSV</button>
+      </div>
+      <div class="card" style="padding:0">
+        <div class="twrap"><table>
+          <thead><tr><th>Invoice</th><th>Date</th><th>Till</th><th>Type</th><th>Cashier</th><th>Customer</th><th class="r">Total</th></tr></thead>
+          <tbody id="salBody"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- STOCK -->
+    <div class="panel" id="p-stock">
+      <div class="toolbar">
+        <input class="grow" id="stkQ" placeholder="Search name, code, barcode..." oninput="renderStock()" />
+        <select id="stkFilter" onchange="renderStock()">
+          <option value="">All items</option><option value="low">Low / out of stock</option>
+        </select>
+        <button class="btn btn-b" onclick="loadStock()">&#8635; Reload</button>
+      </div>
+      <div class="card" style="padding:0">
+        <div class="twrap"><table>
+          <thead><tr><th>Code</th><th>Name</th><th class="r">Price</th><th class="r">Cost</th><th class="r">Stock</th><th class="r">Reorder</th><th>Actions</th></tr></thead>
+          <tbody id="stkBody"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- DISCOUNTS -->
+    <div class="panel" id="p-discounts">
+      <div class="toolbar"><div style="flex:1"></div><button class="btn btn-g" onclick="discountFormModal()">+ New discount code</button></div>
+      <div class="card" style="padding:0">
+        <div class="twrap"><table>
+          <thead><tr><th>Code</th><th>Label</th><th class="r">Value</th><th class="r">Min sale</th><th>Window</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="discBody"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- APPROVALS -->
+    <div class="panel" id="p-approvals">
+      <div class="note">Voids and returns are logged here the moment they happen at any till &mdash; the cashier is never blocked waiting on a decision here. Use this list to review, and flag anything that needs follow-up.</div>
+      <div class="toolbar">
+        <select id="apprFilter" onchange="renderApprovals()">
+          <option value="pending">Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option><option value="">All</option>
+        </select>
+      </div>
+      <div class="card" style="padding:0">
+        <div class="twrap"><table>
+          <thead><tr><th>When</th><th>Till</th><th>Kind</th><th>Ref</th><th class="r">Amount</th><th>Cashier</th><th>Reason</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="apprBody"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- CUSTOMERS -->
+    <div class="panel" id="p-customers">
+      <div class="toolbar"><input class="grow" id="custQ" placeholder="Search name, phone, card..." oninput="renderCustomers()" /></div>
+      <div class="card" style="padding:0">
+        <div class="twrap"><table>
+          <thead><tr><th>Name</th><th>Card</th><th>Phone</th><th class="r">Points</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="custBody"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- TERMINALS -->
+    <div class="panel" id="p-terminals">
+      <div class="card">
+        <h3>&#128272; Add a new till</h3>
+        <div class="note">
+          Two separate things, both needed: the <b>login</b> happens at the till itself &mdash; Settings &rarr;
+          Multi-terminal sync &rarr; <b>Register this terminal</b>, using its own email, a password it makes up,
+          and the code below. The row in the table underneath is just its BIR details (MIN, serial, permit) for
+          receipts &mdash; add that separately with <b>+ Add terminal</b>, any time.
+        </div>
+        <div class="fg"><label>Setup code to give the new till</label><input id="term-setup-code-display" readonly /></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-ghost" onclick="copySetupCode('term-setup-code-display')">&#128203; Copy</button>
+          <span style="font-size:10px;color:var(--text3);align-self:center">Manage or rotate this code under Settings &rarr; Team access.</span>
+        </div>
+      </div>
+      <div class="toolbar"><div style="flex:1"></div><button class="btn btn-g" onclick="terminalFormModal()">+ Add terminal</button></div>
+      <div class="card" style="padding:0">
+        <div class="twrap"><table>
+          <thead><tr><th>Till ID</th><th>Label</th><th>MIN</th><th>Serial</th><th>Permit</th><th>Actions</th></tr></thead>
+          <tbody id="termBody"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="panel" id="p-settings">
+      <div class="card">
+        <h3>&#128272; Team access \u2014 setup code</h3>
+        <div class="note">Anyone with this code can create their own login and get full access to this store \u2014
+          share it only with staff and tills you trust, the same way you'd share a Wi-Fi password. A new till
+          registers itself with this from Settings &rarr; Multi-terminal sync &rarr; Register this terminal.</div>
+        <div class="fg"><label>Current code</label><input id="setup-code-display" readonly /></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-ghost" onclick="copySetupCode()">&#128203; Copy</button>
+          <button class="btn btn-o" onclick="rotateSetupCodeModal()">&#8635; Rotate code (invalidates the old one)</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>&#127970; Store information</h3>
+        <div class="note">Saving here pushes these fields to every till within about 20 seconds &mdash; the same fields a till could edit locally, now controlled from one place.</div>
+        <div class="g2">
+          <div class="fg"><label>Store name</label><input id="st-name" /></div>
+          <div class="fg"><label>Till / terminal label default</label><input id="st-till" /></div>
+          <div class="fg" style="grid-column:1/-1"><label>Address</label><input id="st-addr" /></div>
+          <div class="fg"><label>TIN</label><input id="st-tin" /></div>
+          <div class="fg"><label>VAT registration</label>
+            <select id="st-vatreg"><option value="vat">VAT-registered (12%)</option><option value="nonvat">Non-VAT / Percentage tax</option></select>
+          </div>
+          <div class="fg" style="grid-column:1/-1"><label>Receipt footer phrase</label><input id="st-phrase" /></div>
+          <div class="fg"><label>Serial No.</label><input id="st-serial" /></div>
+          <div class="fg"><label>MIN</label><input id="st-min" /></div>
+          <div class="fg"><label>Permit No.</label><input id="st-permit" /></div>
+          <div class="fg"><label>Return window (days)</label><input id="st-retdays" type="number" min="0" /></div>
+          <div class="fg"><label>Theme color</label><input id="st-theme" type="color" /></div>
+          <div class="fg"><label>Receipt roll</label>
+            <select id="st-roll"><option value="80">80mm thermal</option><option value="58">58mm thermal</option></select>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>&#128179; Loyalty programme</h3>
+        <div class="g2">
+          <div class="fg"><label>Earn 1 point per (&#8369;)</label><input id="st-ptsper" type="number" min="1" /></div>
+          <div class="fg"><label>Redeem block (points)</label><input id="st-redeempts" type="number" min="1" /></div>
+          <div class="fg"><label>Block is worth (&#8369;)</label><input id="st-redeemval" type="number" min="0" step="0.01" /></div>
+          <div class="fg"><label>Card number prefix</label><input id="st-cardpfx" /></div>
+        </div>
+      </div>
+      <button class="btn btn-g" onclick="saveStoreSettings()">&#10003; Save store settings &mdash; pushes to every till</button>
+
+      <div class="card" style="border-color:#5a2222;margin-top:20px">
+        <h3 style="color:var(--red)">&#9888; Danger zone &mdash; erase test data from the cloud</h3>
+        <div class="warnbox">
+          For sample/test transactions made while setting up, before the store goes live. This
+          <b>permanently deletes</b> every sale, stock movement, point movement and approval record for
+          this store from Supabase &mdash; on every till, not just this screen. It does not touch your
+          product catalogue, customers, discounts or terminal list; stock simply reverts to the count
+          from your last catalogue push.<br><br>
+          <b>Once the store is live, do not use this.</b> Real sales records should never be deleted &mdash;
+          void or return them at the till instead, which keeps the audit trail intact. This action cannot be undone.
+        </div>
+        <button class="btn btn-r" onclick="wipeTestDataModal()">&#128465; Erase all sales &amp; stock history from the cloud&hellip;</button>
+      </div>
+    </div>
+
+    <!-- REPORTS -->
+    <div class="panel" id="p-reports">
+      <div class="card">
+        <h3>&#128196; Export reports</h3>
+        <div class="hint">Pick a date range, then export. Figures are pulled fresh from the server each time.</div>
+        <div class="g2">
+          <div class="fg"><label>From</label><input type="date" id="repFrom" /></div>
+          <div class="fg"><label>To</label><input type="date" id="repTo" /></div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+          <button class="btn btn-b" onclick="exportReportSales()">&#11015; Sales CSV</button>
+          <button class="btn btn-b" onclick="exportReportDaily()">&#11015; Daily summary CSV</button>
+          <button class="btn btn-b" onclick="exportReportStock()">&#11015; Current stock CSV</button>
+          <button class="btn btn-b" onclick="exportReportCustomers()">&#11015; Customers / loyalty CSV</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════════════════════════ */
+var CFG_KEY='mystore_dash_cfg';
+var DASH_SEED = {"url":"https://lgnhjaxtmxhuoclkjovy.supabase.co","key":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxnbmhqYXh0bXhodW9jbGtqb3Z5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NzQ0MzYsImV4cCI6MjEwNzQ1MDQzNn0.H6JE6zwbMwZytJMZ-KhFtL8hkoxsNbWKl1VKS_5IdQg","storeId":"2311f362-3eea-4707-b42c-5666f113a4de","name":"Sari-Sari-1","theme":"#2ab5b7","emoji":"🛒"};
+var IS_SEEDED = !!(DASH_SEED.url && DASH_SEED.key && DASH_SEED.storeId);
+var CFG = loadCfg();
+var TOK=null, TOK_EXP=0, WHOAMI='';
+var DATA={ products:[], sales:[], discounts:[], approvals:[], customers:[], terminals:[], settings:null, daily:[] };
+
+function loadCfg(){
+  var saved={};
+  try{ var raw=localStorage.getItem(CFG_KEY); if(raw) saved=JSON.parse(raw)||{}; }catch(e){}
+  // A dashboard generated by the builder is locked to the project, key and
+  // store it was built for; nothing saved in the browser can override that.
+  if(IS_SEEDED) return { url:DASH_SEED.url, key:DASH_SEED.key, storeId:DASH_SEED.storeId, email:saved.email||'' };
+  return { url:saved.url||'', key:saved.key||'', storeId:saved.storeId||'', email:saved.email||'' };
+}
+function saveCfg(){ try{ localStorage.setItem(CFG_KEY, JSON.stringify(CFG)); }catch(e){} }
+
+var $=function(id){ return document.getElementById(id); };
+function esc(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+// Safe to drop into onclick="fn('VALUE')": HTML-escapes first (so a stray
+// \" can't break out of the attribute), then JS-escapes backslashes and
+// single quotes (so a stray \\ or ' can't break out of the string literal
+// or silently swallow the closing quote).
+function jsAttr(v){ return esc(v).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+function peso(n){ n=isNaN(n)?0:parseFloat(n); return '\u20b1'+n.toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function r2(n){ return Math.round((parseFloat(n)||0)*100)/100; }
+function fmtDate(d){ return new Date(d).toLocaleString('en-PH',{month:'short',day:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+function daysAgoISO(n){ var d=new Date(); d.setDate(d.getDate()-n); return d.toISOString().slice(0,10); }
+
+function toast(msg, ms, color){
+  var t=$('toast'); ms=ms||2500; color=color||'#2ecc71';
+  t.textContent=msg; t.style.color=color; t.style.borderColor=color; t.style.opacity='1';
+  clearTimeout(t._t); t._t=setTimeout(function(){ t.style.opacity='0'; }, ms);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   SUPABASE — auth + REST, same pattern as the POS's sync engine
+══════════════════════════════════════════════════════════════════ */
+function base(){ return String(CFG.url||'').replace(/\/+$/,''); }
+function signIn(email, pass){
+  return fetch(base()+'/auth/v1/token?grant_type=password',{
+    method:'POST',
+    headers:{'apikey':CFG.key,'Content-Type':'application/json'},
+    body:JSON.stringify({email:email,password:pass})
+  }).then(function(r){ return r.json().then(function(j){
+    if(!r.ok || !j.access_token) throw new Error(j.error_description||j.msg||j.error||'Sign-in failed');
+    TOK=j.access_token; TOK_EXP=Date.now()+((j.expires_in||3600)-60)*1000;
+    WHOAMI=email;
+    return TOK;
+  }); });
+}
+function signUp(email, pass){
+  return fetch(base()+'/auth/v1/signup',{
+    method:'POST',
+    headers:{'apikey':CFG.key,'Content-Type':'application/json'},
+    body:JSON.stringify({email:email,password:pass})
+  }).then(function(r){ return r.json().then(function(j){
+    if(!r.ok) throw new Error(j.error_description||j.msg||j.error||'Could not create account');
+    return j; // j.access_token is present only if the project skips email confirmation
+  }); });
+}
+function api(path, opts){
+  opts=opts||{};
+  if(!TOK || Date.now()>=TOK_EXP) return Promise.reject(new Error('Session expired \u2014 please sign in again'));
+  opts.headers=Object.assign({
+    'apikey':CFG.key, 'Authorization':'Bearer '+TOK, 'Content-Type':'application/json'
+  }, opts.headers||{});
+  return fetch(base()+'/rest/v1/'+path, opts).then(function(r){
+    if(!r.ok) return r.text().then(function(t){ throw new Error(r.status+' '+t.slice(0,200)); });
+    return r;
+  });
+}
+function apiJson(path, opts){ return api(path, opts).then(function(r){ return r.json(); }); }
+function claimStoreAccess(code){
+  return api('rpc/claim_store_access', {method:'POST', body:JSON.stringify({p_store:CFG.storeId, p_code:code})})
+    .catch(function(e){
+      // PostgREST wraps the raised exception's message inside its JSON error body;
+      // surface just that message rather than the raw "400 {...}" text.
+      var m = String(e.message||e);
+      var mm = m.match(/"message"\s*:\s*"([^"]+)"/);
+      throw new Error(mm ? mm[1] : m);
+    });
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   SETUP / LOGIN
+══════════════════════════════════════════════════════════════════ */
+function showSetup(fromLogin){
+  if(IS_SEEDED){ showLogin(); return; }
+  $('setupScr').style.display='flex'; $('loginScr').style.display='none';
+  $('su-url').value=CFG.url||''; $('su-key').value=CFG.key||''; $('su-store').value=CFG.storeId||'';
+  if(fromLogin){ $('setupErr').textContent=''; }
+}
+function saveSetup(){
+  var url=$('su-url').value.trim().replace(/\/+$/,'');
+  var key=$('su-key').value.trim();
+  var storeId=$('su-store').value.trim();
+  if(!url || !key || !storeId){ $('setupErr').textContent='All three fields are required.'; return; }
+  CFG.url=url; CFG.key=key; CFG.storeId=storeId;
+  saveCfg();
+  showLogin();
+}
+var LOGIN_MODE='signin';
+function setLoginMode(mode){
+  LOGIN_MODE=mode;
+  var reg=(mode==='register');
+  $('regConfirmWrap').style.display=reg?'flex':'none';
+  $('regCodeWrap').style.display=reg?'flex':'none';
+  $('loginBtn').textContent=reg?'Create account & sign in':'Sign in';
+  $('loginSub').textContent=reg
+    ? 'Create your own login for this store with the setup code from the SQL step.'
+    : 'Sign in with your login to manage this store.';
+  $('modeSigninBtn').className='btn btn-full '+(reg?'btn-ghost':'btn-b');
+  $('modeSigninBtn').style.flex='1';
+  $('modeRegisterBtn').className='btn btn-full '+(reg?'btn-b':'btn-ghost');
+  $('modeRegisterBtn').style.flex='1';
+  $('loginErr').textContent='';
+}
+function showLogin(){
+  $('setupScr').style.display='none'; $('loginScr').style.display='flex';
+  $('li-email').value=CFG.email||'';
+  $('changeConn').style.display=IS_SEEDED?'none':'block';
+  $('loginStoreName').innerHTML=(DASH_SEED.emoji||'&#127970;')+' '+esc(DASH_SEED.name||'Owner Dashboard');
+  setLoginMode('signin');
+}
+function doLoginOrRegister(){
+  if(LOGIN_MODE==='register') doRegister(); else doLogin();
+}
+function doLogin(){
+  var email=$('li-email').value.trim().toLowerCase();
+  var pass=$('li-pass').value;
+  if(!email || !pass){ $('loginErr').textContent='Email and password are both required.'; return; }
+  $('loginBtn').disabled=true; $('loginBtn').innerHTML='<span class="spin"></span> Signing in\u2026';
+  $('loginErr').textContent='';
+  signIn(email, pass).then(function(){
+    CFG.email=email; saveCfg();
+    $('li-pass').value='';
+    enterApp();
+  }).catch(function(e){
+    $('loginErr').textContent=String(e.message||e);
+  }).finally(function(){
+    $('loginBtn').disabled=false; $('loginBtn').textContent='Sign in';
+  });
+}
+function doRegister(){
+  var email=$('li-email').value.trim().toLowerCase();
+  var pass=$('li-pass').value;
+  var pass2=$('li-pass2').value;
+  var code=$('li-code').value.trim();
+  if(!email || !pass){ $('loginErr').textContent='Email and password are both required.'; return; }
+  if(pass.length<6){ $('loginErr').textContent='Password must be at least 6 characters.'; return; }
+  if(pass!==pass2){ $('loginErr').textContent='Passwords do not match.'; return; }
+  if(!code){ $('loginErr').textContent='Setup code is required \u2014 it was shown when the store was created in the SQL step.'; return; }
+  $('loginBtn').disabled=true; $('loginBtn').innerHTML='<span class="spin"></span> Creating account\u2026';
+  $('loginErr').textContent='';
+  signUp(email, pass).then(function(j){
+    if(j.access_token){
+      TOK=j.access_token; TOK_EXP=Date.now()+((j.expires_in||3600)-60)*1000; WHOAMI=email;
+      return claimStoreAccess(code).then(function(){
+        CFG.email=email; saveCfg();
+        $('li-pass').value=''; $('li-pass2').value=''; $('li-code').value='';
+        enterApp();
+      });
+    }
+    // No session yet: this project requires confirming the email first.
+    toast('Account created \u2014 check your email to confirm it, then sign in below.', 5500, '#2ecc71');
+    $('li-pass').value=''; $('li-pass2').value=''; $('li-code').value='';
+    setLoginMode('signin');
+  }).catch(function(e){
+    $('loginErr').textContent=String(e.message||e);
+  }).finally(function(){
+    $('loginBtn').disabled=false; $('loginBtn').textContent = LOGIN_MODE==='register' ? 'Create account & sign in' : 'Sign in';
+  });
+}
+function doLogout(){
+  TOK=null; TOK_EXP=0;
+  $('app').classList.remove('on');
+  closeModal();
+  showLogin();
+}
+
+// A valid sign-in only proves who someone is, not that they're allowed
+// into THIS store — a login created the old manual way, or whose claim
+// step never happened, is a real account with zero store_members rows.
+// Check that before handing over the dashboard rather than showing a
+// shell full of silently-empty, RLS-denied tabs.
+function enterApp(){
+  $('loginScr').style.display='none';
+  apiJson('store_members?select=store_id&store_id=eq.'+encodeURIComponent(CFG.storeId)+'&limit=1')
+    .then(function(rows){ (rows && rows.length) ? showAppShell() : showClaimScreen(); })
+    .catch(function(){ showClaimScreen(); });
+}
+function showAppShell(){
+  closeModal();
+  $('app').classList.add('on');
+  $('tbWho').textContent=WHOAMI;
+  $('tbStoreName').textContent=DASH_SEED.name||'My Store';
+  $('tbEmoji').innerHTML=DASH_SEED.emoji||'&#127970;';
+  refreshAll();
+}
+function showClaimScreen(){
+  openModal('<div class="mbox">'+mHead('One more step')+
+    '<div class="note">Signed in as '+esc(WHOAMI)+', but this login isn\u2019t linked to this store yet. '+
+    'Enter the setup code from the SQL step to finish \u2014 ask whoever ran it if you don\u2019t have it.</div>'+
+    '<div class="fg"><label>Setup code</label><input id="claim-code" autocomplete="off" /></div>'+
+    '<button class="btn btn-g btn-full" id="claimBtn" onclick="doClaimAccess()">Claim access</button>'+
+    '<button class="btn btn-ghost btn-full" style="margin-top:8px" onclick="doLogout()">Sign out</button></div>');
+}
+function doClaimAccess(){
+  var code=($('claim-code').value||'').trim();
+  if(!code){ toast('Enter the setup code', 2000, '#e74c3c'); return; }
+  var btn=$('claimBtn'); btn.disabled=true; btn.innerHTML='<span class="spin"></span> Claiming\u2026';
+  claimStoreAccess(code).then(function(){
+    toast('Access granted', 2400, '#2ecc71');
+    showAppShell();
+  }).catch(function(e){
+    toast('Could not claim access: '+e.message, 4200, '#e74c3c');
+  }).finally(function(){
+    btn.disabled=false; btn.textContent='Claim access';
+  });
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   TABS
+══════════════════════════════════════════════════════════════════ */
+function showTab(name){
+  document.querySelectorAll('.tab').forEach(function(t){ t.classList.toggle('on', t.dataset.tab===name); });
+  document.querySelectorAll('.panel').forEach(function(p){ p.classList.toggle('on', p.id==='p-'+name); });
+  if(name==='sales' && !DATA.sales.length) loadSales();
+  if(name==='stock' && !DATA.products.length) loadStock();
+  if(name==='discounts') loadDiscounts();
+  if(name==='approvals') loadApprovals();
+  if(name==='customers') loadCustomers();
+  if(name==='terminals') loadTerminals();
+  if(name==='settings') loadSettingsTab();
+}
+
+function refreshAll(){
+  loadOverview();
+  loadStock();
+  loadApprovals();
+  loadTerminals();
+  toast('Refreshing\u2026', 1200, '#5dade2');
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   OVERVIEW
+══════════════════════════════════════════════════════════════════ */
+function loadOverview(){
+  var sid=CFG.storeId;
+  Promise.all([
+    apiJson('daily_by_store?store_id=eq.'+encodeURIComponent(sid)+'&select=*&order=biz_date.desc&limit=14').catch(function(){ return []; }),
+    apiJson('low_stock?store_id=eq.'+encodeURIComponent(sid)+'&select=*&order=stock.asc&limit=12').catch(function(){ return []; }),
+    apiJson('pending_approvals?store_id=eq.'+encodeURIComponent(sid)+'&select=*&order=at.desc&limit=8').catch(function(){ return []; })
+  ]).then(function(res){
+    DATA.daily=res[0]||[]; renderOverviewStats(); renderOverviewDaily();
+    renderOverviewLow(res[1]||[]);
+    renderOverviewAppr(res[2]||[]);
+    $('apprBadge').style.display = (res[2]&&res[2].length) ? 'inline-block':'none';
+    $('apprBadge').textContent = res[2]?res[2].length:0;
+  }).catch(function(e){ toast('Overview failed to load: '+e.message, 4000, '#e74c3c'); });
+}
+function renderOverviewStats(){
+  var today=DATA.daily.find(function(d){ return d.biz_date===todayISO(); }) || {sales_count:0,gross:0,returns:0,voids:0};
+  var net=r2((today.gross||0)-(today.returns||0)-(today.voids||0));
+  var box=$('ovStats');
+  box.innerHTML=[
+    ['Today\u2019s net sales', peso(net), (today.sales_count||0)+' transaction(s)', ''],
+    ['Gross today', peso(today.gross||0), '', ''],
+    ['Returns today', peso(today.returns||0), '', today.returns>0?'warn':''],
+    ['Voids today', peso(today.voids||0), '', today.voids>0?'bad':'']
+  ].map(function(s){
+    return '<div class="stat '+s[3]+'"><div class="l">'+s[0]+'</div><div class="v">'+s[1]+'</div>'+(s[2]?'<div class="s">'+s[2]+'</div>':'')+'</div>';
+  }).join('');
+}
+function renderOverviewDaily(){
+  var tb=$('ovDaily');
+  if(!DATA.daily.length){ tb.innerHTML='<tr><td colspan="5" class="empty">No sales recorded yet</td></tr>'; return; }
+  tb.innerHTML=DATA.daily.map(function(d){
+    return '<tr><td>'+esc(d.biz_date)+'</td><td class="r">'+(d.sales_count||0)+'</td>'+
+      '<td class="r" style="color:var(--green)">'+peso(d.gross||0)+'</td>'+
+      '<td class="r" style="color:var(--orange)">'+peso(d.returns||0)+'</td>'+
+      '<td class="r" style="color:var(--red)">'+peso(d.voids||0)+'</td></tr>';
+  }).join('');
+}
+function renderOverviewLow(rows){
+  var box=$('ovLow');
+  if(!rows.length){ box.innerHTML='<div class="empty">Everything is well-stocked</div>'; return; }
+  box.innerHTML=rows.map(function(p){
+    var out=p.stock<=0;
+    return '<div style="display:flex;justify-content:space-between;padding:5px 8px;background:var(--bg3);border:1px solid '+(out?'#5a2222':'#5a4a00')+';border-radius:3px;margin-bottom:4px;font-size:11px">'+
+      '<span>'+esc(p.name)+'</span><span class="badge '+(out?'b-red':'b-yellow')+'">'+(out?'Out':p.stock+' left')+'</span></div>';
+  }).join('');
+}
+function renderOverviewAppr(rows){
+  var box=$('ovAppr');
+  if(!rows.length){ box.innerHTML='<div class="empty">Nothing pending</div>'; return; }
+  box.innerHTML=rows.map(function(a){
+    return '<div style="display:flex;justify-content:space-between;padding:5px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:3px;margin-bottom:4px;font-size:11px">'+
+      '<span>'+esc((a.kind||'').replace('_',' '))+' '+esc(a.ref||'')+'</span><span style="color:var(--yellow)">'+peso(a.amount||0)+'</span></div>';
+  }).join('');
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   SALES
+══════════════════════════════════════════════════════════════════ */
+function loadSales(){
+  var sid=CFG.storeId;
+  var from=$('salFrom').value, to=$('salTo').value;
+  var q='sales?store_id=eq.'+encodeURIComponent(sid)+'&select=*&order=at.desc&limit=500';
+  if(from) q+='&at=gte.'+encodeURIComponent(from+'T00:00:00');
+  if(to)   q+='&at=lte.'+encodeURIComponent(to+'T23:59:59');
+  apiJson(q).then(function(rows){
+    DATA.sales=rows||[];
+    var tills={};
+    DATA.sales.forEach(function(s){ tills[s.till_id]=1; });
+    var sel=$('salTill'), cur=sel.value;
+    sel.innerHTML='<option value="">All terminals</option>'+Object.keys(tills).map(function(t){ return '<option value="'+esc(t)+'"'+(t===cur?' selected':'')+'>'+esc(t)+'</option>'; }).join('');
+    renderSales();
+  }).catch(function(e){ toast('Sales failed to load: '+e.message, 4000, '#e74c3c'); });
+}
+function renderSales(){
+  var q=($('salQ').value||'').toLowerCase();
+  var till=$('salTill').value, type=$('salType').value;
+  var list=DATA.sales.filter(function(s){
+    var mq=!q || s.inv.toLowerCase().indexOf(q)>-1 || (s.cashier||'').toLowerCase().indexOf(q)>-1 ||
+      ((s.payload&&s.payload.custName)||'').toLowerCase().indexOf(q)>-1;
+    var mt=!till || s.till_id===till;
+    var mtype=!type || s.type===type;
+    return mq&&mt&&mtype;
+  });
+  var tb=$('salBody');
+  if(!list.length){ tb.innerHTML='<tr><td colspan="7" class="empty">No sales match the current filter</td></tr>'; return; }
+  tb.innerHTML=list.slice(0,300).map(function(s){
+    var col=s.type==='void'?'var(--red)':(s.type==='return'?'var(--orange)':'var(--text2)');
+    return '<tr><td style="font-family:\'Courier New\',monospace;color:'+col+'">'+esc(s.inv)+'</td>'+
+      '<td>'+fmtDate(s.at)+'</td><td>'+esc(s.till_id)+'</td>'+
+      '<td><span class="badge '+(s.type==='void'?'b-red':s.type==='return'?'b-yellow':'b-green')+'">'+esc((s.type||'sale').toUpperCase())+'</span></td>'+
+      '<td>'+esc(s.cashier||'')+'</td><td>'+esc((s.payload&&s.payload.custName)||'')+'</td>'+
+      '<td class="r" style="color:'+col+'">'+peso(s.total)+'</td></tr>';
+  }).join('');
+}
+function exportSalesCsv(){
+  if(!DATA.sales.length){ toast('Nothing to export', 2000, '#f1c40f'); return; }
+  var head=['invoice','date','till','type','cashier','customer','total'];
+  var rows=[head.join(',')].concat(DATA.sales.map(function(s){
+    return [s.inv, s.at, s.till_id, s.type, s.cashier||'', (s.payload&&s.payload.custName)||'', r2(s.total)]
+      .map(function(v){ return '"'+String(v==null?'':v).replace(/"/g,'""')+'"'; }).join(',');
+  }));
+  dlFile('sales_'+todayISO()+'.csv', rows.join('\r\n'));
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   STOCK
+══════════════════════════════════════════════════════════════════ */
+function loadStock(){
+  apiJson('product_stock?store_id=eq.'+encodeURIComponent(CFG.storeId)+'&select=*&order=name.asc&limit=3000').then(function(rows){
+    DATA.products=rows||[]; renderStock();
+  }).catch(function(e){ toast('Stock failed to load: '+e.message, 4000, '#e74c3c'); });
+}
+function renderStock(){
+  var q=($('stkQ').value||'').toLowerCase();
+  var filt=$('stkFilter').value;
+  var list=DATA.products.filter(function(p){
+    var mq=!q || p.name.toLowerCase().indexOf(q)>-1 || String(p.bc||'').toLowerCase().indexOf(q)>-1 || String(p.code||'').toLowerCase().indexOf(q)>-1;
+    var mf=!filt || (filt==='low' && p.stock<=(p.rl||5));
+    return mq&&mf;
+  });
+  var tb=$('stkBody');
+  if(!list.length){ tb.innerHTML='<tr><td colspan="7" class="empty">'+(DATA.products.length?'No item matches the current filter':'No products yet \u2014 they appear here once a till pushes its catalogue')+'</td></tr>'; return; }
+  tb.innerHTML=list.map(function(p){
+    var low=p.stock<=(p.rl||5);
+    return '<tr><td style="font-family:\'Courier New\',monospace;font-size:10px">'+esc(p.code||'')+'</td>'+
+      '<td>'+esc(p.name)+'</td><td class="r" style="color:var(--green)">'+peso(p.price)+'</td>'+
+      '<td class="r">'+peso(p.cost)+'</td>'+
+      '<td class="r"><span class="badge '+(p.stock<=0?'b-red':low?'b-yellow':'b-green')+'">'+p.stock+'</span></td>'+
+      '<td class="r">'+(p.rl||5)+'</td>'+
+      '<td><button class="rowbtn" onclick="stockEditModal(\''+jsAttr(p.bc)+'\')">Edit</button>'+
+      '<button class="rowbtn" onclick="stockAdjustModal(\''+jsAttr(p.bc)+'\')">Adjust stock</button></td></tr>';
+  }).join('');
+}
+function findProd(bc){ return DATA.products.find(function(p){ return p.bc===bc; }); }
+function stockEditModal(bc){
+  var p=findProd(bc); if(!p) return;
+  openModal('<div class="mbox">'+mHead('Edit \u2014 '+esc(p.name))+
+    '<div class="fg"><label>Selling price</label><input id="se-price" type="number" step="0.01" value="'+p.price+'" /></div>'+
+    '<div class="fg"><label>Cost price</label><input id="se-cost" type="number" step="0.01" value="'+p.cost+'" /></div>'+
+    '<div class="fg"><label>Reorder level</label><input id="se-rl" type="number" value="'+(p.rl||5)+'" /></div>'+
+    '<div class="fg"><label>Category</label><input id="se-cat" value="'+esc(p.cat||'')+'" /></div>'+
+    '<button class="btn btn-g btn-full" onclick="saveStockEdit(\''+jsAttr(bc)+'\')">Save changes</button></div>');
+}
+function saveStockEdit(bc){
+  var p=findProd(bc); if(!p) return;
+  var row={store_id:CFG.storeId, bc:bc, code:p.code||null, name:p.name,
+    price:r2($('se-price').value), cost:r2($('se-cost').value), cat:$('se-cat').value.trim()||null,
+    unit:p.unit||'pcs', sup:p.sup||null, rl:parseInt($('se-rl').value)||5, vx:!!p.vx,
+    updated_at:new Date().toISOString()};
+  api('products',{method:'POST', headers:{'Prefer':'resolution=merge-duplicates,return=minimal'}, body:JSON.stringify([row])})
+    .then(function(){ toast('Saved \u2014 the till will pick this up on its next sync'); closeModal(); loadStock(); })
+    .catch(function(e){ toast('Save failed: '+e.message, 4000, '#e74c3c'); });
+}
+function stockAdjustModal(bc){
+  var p=findProd(bc); if(!p) return;
+  openModal('<div class="mbox">'+mHead('Adjust stock \u2014 '+esc(p.name))+
+    '<div class="note">Current stock is <b>'+p.stock+'</b>. Enter the new count after a physical recount; the difference is written as a movement, the same way the till itself logs stock changes.</div>'+
+    '<div class="fg"><label>New stock count</label><input id="sa-new" type="number" value="'+p.stock+'" /></div>'+
+    '<div class="fg"><label>Reason / reference</label><input id="sa-ref" placeholder="e.g. Physical count Sept 27" /></div>'+
+    '<button class="btn btn-g btn-full" onclick="saveStockAdjust(\''+jsAttr(bc)+'\')">Save adjustment</button></div>');
+}
+function saveStockAdjust(bc){
+  var p=findProd(bc); if(!p) return;
+  var target=parseFloat($('sa-new').value);
+  if(isNaN(target) || target<0){ toast('Enter a valid count', 2000, '#e74c3c'); return; }
+  var delta=r2(target-p.stock);
+  if(!delta){ toast('No change to record', 1800, '#f1c40f'); closeModal(); return; }
+  var row={id:uuidv4(), store_id:CFG.storeId, bc:bc, delta:delta, reason:'recount',
+    ref:$('sa-ref').value.trim()||'dashboard adjustment', till_id:'DASHBOARD', at:new Date().toISOString()};
+  api('stock_moves',{method:'POST', headers:{'Prefer':'return=minimal'}, body:JSON.stringify([row])})
+    .then(function(){ toast('Stock adjusted'); closeModal(); loadStock(); })
+    .catch(function(e){ toast('Adjustment failed: '+e.message, 4000, '#e74c3c'); });
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   DISCOUNTS
+══════════════════════════════════════════════════════════════════ */
+function loadDiscounts(){
+  apiJson('discounts?store_id=eq.'+encodeURIComponent(CFG.storeId)+'&select=*&order=updated_at.desc').then(function(rows){
+    DATA.discounts=rows||[]; renderDiscounts();
+  }).catch(function(e){ toast('Discounts failed to load: '+e.message, 4000, '#e74c3c'); });
+}
+function renderDiscounts(){
+  var tb=$('discBody');
+  if(!DATA.discounts.length){ tb.innerHTML='<tr><td colspan="7" class="empty">No discount codes yet</td></tr>'; return; }
+  tb.innerHTML=DATA.discounts.map(function(d){
+    var amt=d.kind==='flat'?peso(d.value):(Number(d.value)+'%');
+    var win=(d.starts_at?new Date(d.starts_at).toLocaleDateString('en-PH'):'\u2014')+' \u2192 '+(d.ends_at?new Date(d.ends_at).toLocaleDateString('en-PH'):'\u2014');
+    return '<tr><td style="font-family:\'Courier New\',monospace">'+esc(d.code)+'</td><td>'+esc(d.label||'')+'</td>'+
+      '<td class="r" style="color:var(--green)">'+amt+'</td><td class="r">'+(d.min_amount?peso(d.min_amount):'\u2014')+'</td>'+
+      '<td style="font-size:10px">'+win+'</td>'+
+      '<td><span class="badge '+(d.active?'b-green':'b-gray')+'">'+(d.active?'Active':'Off')+'</span></td>'+
+      '<td><button class="rowbtn" onclick="discountFormModal(\''+jsAttr(d.id)+'\')">Edit</button>'+
+      '<button class="rowbtn danger" onclick="deleteDiscount(\''+jsAttr(d.id)+'\')">Delete</button></td></tr>';
+  }).join('');
+}
+function discountFormModal(id){
+  var d=id?DATA.discounts.find(function(x){ return x.id===id; }):null;
+  openModal('<div class="mbox">'+mHead(d?'Edit discount':'New discount code')+
+    '<div class="fg"><label>Code (what the cashier types)</label><input id="df-code" value="'+esc(d?d.code:'')+'" placeholder="e.g. OPENING10" '+(d?'':'')+'/></div>'+
+    '<div class="fg"><label>Label</label><input id="df-label" value="'+esc(d?d.label||'':'')+'" placeholder="e.g. Opening week 10% off" /></div>'+
+    '<div class="g2"><div class="fg"><label>Kind</label><select id="df-kind"><option value="pct"'+(d&&d.kind==='pct'?' selected':'')+'>Percent</option><option value="flat"'+(d&&d.kind==='flat'?' selected':'')+'>Flat amount (\u20b1)</option></select></div>'+
+    '<div class="fg"><label>Value</label><input id="df-value" type="number" step="0.01" value="'+(d?d.value:'10')+'" /></div></div>'+
+    '<div class="fg"><label>Minimum sale amount (optional)</label><input id="df-min" type="number" step="0.01" value="'+(d?d.min_amount||0:0)+'" /></div>'+
+    '<div class="g2"><div class="fg"><label>Starts (optional)</label><input id="df-start" type="date" value="'+(d&&d.starts_at?d.starts_at.slice(0,10):'')+'" /></div>'+
+    '<div class="fg"><label>Ends (optional)</label><input id="df-end" type="date" value="'+(d&&d.ends_at?d.ends_at.slice(0,10):'')+'" /></div></div>'+
+    '<label style="display:flex;align-items:center;gap:7px;font-size:11px;color:var(--text2);margin:8px 0;cursor:pointer">'+
+    '<input type="checkbox" id="df-active" '+(d?(d.active?'checked':''):'checked')+' style="width:14px;height:14px" /> Active</label>'+
+    '<button class="btn btn-g btn-full" onclick="saveDiscount('+(d?"'"+jsAttr(d.id)+"'":'null')+')">Save</button></div>');
+}
+function saveDiscount(id){
+  var code=$('df-code').value.trim().toUpperCase();
+  if(!code){ toast('Code is required', 2000, '#e74c3c'); return; }
+  var row={store_id:CFG.storeId, code:code, label:$('df-label').value.trim()||null,
+    kind:$('df-kind').value, value:r2($('df-value').value), min_amount:r2($('df-min').value),
+    active:$('df-active').checked, starts_at:$('df-start').value?($('df-start').value+'T00:00:00'):null,
+    ends_at:$('df-end').value?($('df-end').value+'T23:59:59'):null, updated_at:new Date().toISOString()};
+  if(id) row.id=id;
+  api('discounts',{method:'POST', headers:{'Prefer':'resolution=merge-duplicates,return=minimal'}, body:JSON.stringify([row])})
+    .then(function(){ toast('Discount saved'); closeModal(); loadDiscounts(); })
+    .catch(function(e){ toast('Save failed (is the code unique?): '+e.message, 5000, '#e74c3c'); });
+}
+function deleteDiscount(id){
+  if(!confirm('Delete this discount code? Tills will stop offering it on their next sync.')) return;
+  api('discounts?id=eq.'+encodeURIComponent(id),{method:'DELETE'})
+    .then(function(){ toast('Discount deleted'); loadDiscounts(); })
+    .catch(function(e){ toast('Delete failed: '+e.message, 4000, '#e74c3c'); });
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   APPROVALS
+══════════════════════════════════════════════════════════════════ */
+function loadApprovals(){
+  var status=$('apprFilter').value;
+  var q='approvals?store_id=eq.'+encodeURIComponent(CFG.storeId)+'&select=*&order=at.desc&limit=300';
+  if(status) q+='&status=eq.'+encodeURIComponent(status);
+  apiJson(q).then(function(rows){ DATA.approvals=rows||[]; renderApprovals(); })
+    .catch(function(e){ toast('Approvals failed to load: '+e.message, 4000, '#e74c3c'); });
+}
+function renderApprovals(){
+  var tb=$('apprBody');
+  if(!DATA.approvals.length){ tb.innerHTML='<tr><td colspan="9" class="empty">Nothing here</td></tr>'; return; }
+  tb.innerHTML=DATA.approvals.map(function(a){
+    var st=a.status||'pending';
+    return '<tr><td>'+fmtDate(a.at)+'</td><td>'+esc(a.till_id||'')+'</td>'+
+      '<td>'+esc((a.kind||'').replace('_',' '))+'</td><td style="font-family:\'Courier New\',monospace">'+esc(a.ref||'')+'</td>'+
+      '<td class="r">'+peso(a.amount||0)+'</td><td>'+esc(a.cashier||'')+'</td>'+
+      '<td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(a.reason||'')+'">'+esc(a.reason||'')+'</td>'+
+      '<td><span class="badge '+(st==='approved'?'b-green':st==='rejected'?'b-red':'b-yellow')+'">'+st+'</span></td>'+
+      '<td>'+(st==='pending'?
+        '<button class="rowbtn good" onclick="setApprovalStatus(\''+jsAttr(a.id)+'\',\'approved\')">Approve</button>'+
+        '<button class="rowbtn danger" onclick="setApprovalStatus(\''+jsAttr(a.id)+'\',\'rejected\')">Reject</button>'
+        :'\u2014')+'</td></tr>';
+  }).join('');
+}
+function setApprovalStatus(id, status){
+  api('approvals?id=eq.'+encodeURIComponent(id),{method:'PATCH', headers:{'Prefer':'return=minimal'},
+    body:JSON.stringify({status:status, reviewed_by:WHOAMI, reviewed_at:new Date().toISOString()})})
+    .then(function(){ toast('Marked '+status); loadApprovals(); loadOverview(); })
+    .catch(function(e){ toast('Update failed: '+e.message, 4000, '#e74c3c'); });
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   CUSTOMERS / LOYALTY
+══════════════════════════════════════════════════════════════════ */
+function loadCustomers(){
+  apiJson('customer_points?store_id=eq.'+encodeURIComponent(CFG.storeId)+'&select=*&order=points.desc&limit=2000').then(function(rows){
+    DATA.customers=rows||[]; renderCustomers();
+  }).catch(function(e){ toast('Customers failed to load: '+e.message, 4000, '#e74c3c'); });
+}
+function renderCustomers(){
+  var q=($('custQ').value||'').toLowerCase();
+  var list=DATA.customers.filter(function(c){
+    return !q || (c.name||'').toLowerCase().indexOf(q)>-1 || (c.phone||'').toLowerCase().indexOf(q)>-1 || (c.card||'').toLowerCase().indexOf(q)>-1;
+  });
+  var tb=$('custBody');
+  if(!list.length){ tb.innerHTML='<tr><td colspan="6" class="empty">'+(DATA.customers.length?'No match':'No customers synced yet')+'</td></tr>'; return; }
+  tb.innerHTML=list.map(function(c){
+    var blocked=c.card_active===false;
+    return '<tr><td>'+esc(c.name)+'</td><td style="font-family:\'Courier New\',monospace">'+esc(c.card||'\u2014')+'</td>'+
+      '<td>'+esc(c.phone||'')+'</td><td class="r" style="color:var(--yellow)">'+(c.points||0)+'</td>'+
+      '<td><span class="badge '+(blocked?'b-red':c.card?'b-green':'b-gray')+'">'+(blocked?'Blocked':c.card?'Active':'No card')+'</span></td>'+
+      '<td><button class="rowbtn" onclick="pointsAdjustModal(\''+jsAttr(c.cust_id)+'\')">Adjust pts</button>'+
+      (c.card?'<button class="rowbtn '+(blocked?'good':'danger')+'" onclick="toggleCardStatus(\''+jsAttr(c.cust_id)+'\','+(!blocked)+')">'+(blocked?'Unblock':'Block')+'</button>':'')+
+      '</td></tr>';
+  }).join('');
+}
+function pointsAdjustModal(custId){
+  var c=DATA.customers.find(function(x){ return x.cust_id===custId; }); if(!c) return;
+  openModal('<div class="mbox">'+mHead('Adjust points \u2014 '+esc(c.name))+
+    '<div class="note">Current balance: <b>'+c.points+' pts</b>. Enter a positive number to credit, negative to deduct.</div>'+
+    '<div class="fg"><label>Points change</label><input id="pa-delta" type="number" value="0" /></div>'+
+    '<div class="fg"><label>Reason</label><input id="pa-reason" placeholder="e.g. Goodwill credit" /></div>'+
+    '<button class="btn btn-g btn-full" onclick="savePointsAdjust(\''+jsAttr(custId)+'\')">Save</button></div>');
+}
+function savePointsAdjust(custId){
+  var delta=parseInt($('pa-delta').value)||0;
+  if(!delta){ toast('Enter a non-zero amount', 1800, '#f1c40f'); return; }
+  var row={id:uuidv4(), store_id:CFG.storeId, cust_id:custId, delta:delta, reason:'earn', ref:$('pa-reason').value.trim()||'dashboard adjustment', till_id:'DASHBOARD', at:new Date().toISOString()};
+  api('point_moves',{method:'POST', headers:{'Prefer':'return=minimal'}, body:JSON.stringify([row])})
+    .then(function(){ toast('Points updated'); closeModal(); loadCustomers(); })
+    .catch(function(e){ toast('Failed: '+e.message, 4000, '#e74c3c'); });
+}
+function toggleCardStatus(custId, active){
+  api('customers?store_id=eq.'+encodeURIComponent(CFG.storeId)+'&cust_id=eq.'+encodeURIComponent(custId),
+    {method:'PATCH', headers:{'Prefer':'return=minimal'}, body:JSON.stringify({card_active:active, updated_at:new Date().toISOString()})})
+    .then(function(){ toast(active?'Card unblocked':'Card blocked'); loadCustomers(); })
+    .catch(function(e){ toast('Failed: '+e.message, 4000, '#e74c3c'); });
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   TERMINALS
+══════════════════════════════════════════════════════════════════ */
+function loadTerminals(){
+  loadSetupCode('term-setup-code-display');
+  apiJson('terminals?store_id=eq.'+encodeURIComponent(CFG.storeId)+'&select=*&order=till_id.asc').then(function(rows){
+    DATA.terminals=rows||[]; renderTerminals();
+  }).catch(function(e){ toast('Terminals failed to load: '+e.message, 4000, '#e74c3c'); });
+}
+function renderTerminals(){
+  var tb=$('termBody');
+  if(!DATA.terminals.length){ tb.innerHTML='<tr><td colspan="6" class="empty">No terminals registered yet</td></tr>'; return; }
+  tb.innerHTML=DATA.terminals.map(function(t){
+    return '<tr><td style="font-family:\'Courier New\',monospace">'+esc(t.till_id)+'</td><td>'+esc(t.label||'')+'</td>'+
+      '<td>'+esc(t.min_no||'\u2014')+'</td><td>'+esc(t.serial_no||'\u2014')+'</td><td>'+esc(t.permit_no||'\u2014')+'</td>'+
+      '<td><button class="rowbtn" onclick="terminalFormModal(\''+jsAttr(t.id)+'\')">Edit</button>'+
+      '<button class="rowbtn danger" onclick="deleteTerminal(\''+jsAttr(t.id)+'\')">Delete</button></td></tr>';
+  }).join('');
+}
+function terminalFormModal(id){
+  var t=id?DATA.terminals.find(function(x){ return x.id===id; }):null;
+  openModal('<div class="mbox">'+mHead(t?'Edit terminal':'Add terminal')+
+    '<div class="fg"><label>Till ID</label><input id="tf-till" value="'+esc(t?t.till_id:'')+'" placeholder="TILL-01" /></div>'+
+    '<div class="fg"><label>Label</label><input id="tf-label" value="'+esc(t?t.label||'':'')+'" placeholder="Counter 1" /></div>'+
+    '<div class="fg"><label>MIN (Machine Identification No.)</label><input id="tf-min" value="'+esc(t?t.min_no||'':'')+'" /></div>'+
+    '<div class="fg"><label>Serial No.</label><input id="tf-serial" value="'+esc(t?t.serial_no||'':'')+'" /></div>'+
+    '<div class="fg"><label>Permit No.</label><input id="tf-permit" value="'+esc(t?t.permit_no||'':'')+'" /></div>'+
+    '<button class="btn btn-g btn-full" onclick="saveTerminal('+(t?"'"+jsAttr(t.id)+"'":'null')+')">Save</button></div>');
+}
+function saveTerminal(id){
+  var till=$('tf-till').value.trim();
+  if(!till){ toast('Till ID is required', 2000, '#e74c3c'); return; }
+  var row={store_id:CFG.storeId, till_id:till, label:$('tf-label').value.trim()||null,
+    min_no:$('tf-min').value.trim()||null, serial_no:$('tf-serial').value.trim()||null,
+    permit_no:$('tf-permit').value.trim()||null};
+  if(id) row.id=id;
+  api('terminals',{method:'POST', headers:{'Prefer':'resolution=merge-duplicates,return=minimal'}, body:JSON.stringify([row])})
+    .then(function(){ toast('Terminal saved'); closeModal(); loadTerminals(); })
+    .catch(function(e){ toast('Save failed: '+e.message, 4000, '#e74c3c'); });
+}
+function deleteTerminal(id){
+  if(!confirm('Remove this terminal record? This does not affect the till itself, only its dashboard listing.')) return;
+  api('terminals?id=eq.'+encodeURIComponent(id),{method:'DELETE'})
+    .then(function(){ toast('Terminal removed'); loadTerminals(); })
+    .catch(function(e){ toast('Delete failed: '+e.message, 4000, '#e74c3c'); });
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   SETTINGS
+══════════════════════════════════════════════════════════════════ */
+function loadSetupCode(targetId){
+  targetId = targetId || 'setup-code-display';
+  apiJson('stores?id=eq.'+encodeURIComponent(CFG.storeId)+'&select=setup_code').then(function(rows){
+    var v = (rows && rows[0] && rows[0].setup_code) || '(unavailable)';
+    var el = $(targetId); if (el) el.value = v;
+  }).catch(function(e){ var el = $(targetId); if (el) el.value = '(failed to load)'; });
+}
+function copySetupCode(targetId){
+  var v=$(targetId || 'setup-code-display').value;
+  if(!v || v.charAt(0)==='('){ toast('Nothing to copy yet', 1800, '#f1c40f'); return; }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(v).then(function(){ toast('Copied'); }).catch(function(){ toast('Could not copy \u2014 select and copy manually', 2400, '#e74c3c'); });
+  } else {
+    toast('Could not copy \u2014 select and copy manually', 2400, '#e74c3c');
+  }
+}
+function rotateSetupCodeModal(){
+  openModal('<div class="mbox">'+mHead('Rotate setup code')+
+    '<div class="warnbox">The current code stops working immediately. Anyone who hasn\u2019t claimed access '+
+    'with it yet will need the new one \u2014 staff and tills already registered keep their access either way.</div>'+
+    '<button class="btn btn-r btn-full" onclick="doRotateSetupCode()">Rotate now</button></div>');
+}
+function doRotateSetupCode(){
+  api('rpc/rotate_setup_code', {method:'POST', body:JSON.stringify({p_store:CFG.storeId})})
+    .then(function(r){ return r.json(); })
+    .then(function(code){
+      closeModal();
+      toast('Setup code rotated', 2400, '#2ecc71');
+      var v = (typeof code === 'string') ? code : JSON.stringify(code);
+      ['setup-code-display','term-setup-code-display'].forEach(function(id){ var el=$(id); if(el) el.value=v; });
+    })
+    .catch(function(e){ toast('Rotate failed: '+e.message, 4000, '#e74c3c'); });
+}
+function loadSettingsTab(){
+  loadSetupCode();
+  apiJson('store_settings?store_id=eq.'+encodeURIComponent(CFG.storeId)+'&select=*').then(function(rows){
+    DATA.settings=(rows&&rows[0])?rows[0]:{};
+    var s=DATA.settings;
+    $('st-name').value=s.name||DASH_SEED.name||'';
+    $('st-addr').value=s.addr||'';
+    $('st-tin').value=s.tin||'';
+    $('st-phrase').value=s.phrase||'';
+    $('st-serial').value=s.serial||'';
+    $('st-min').value=s.min||'';
+    $('st-permit').value=s.permit||'';
+    $('st-vatreg').value=s.vat_reg||'vat';
+    $('st-till').value=s.till||'';
+    $('st-retdays').value=(s.ret_days==null?7:s.ret_days);
+    $('st-theme').value=s.theme_color||'#1a3a5c';
+    $('st-roll').value=String(s.roll_mm||80);
+    $('st-ptsper').value=s.pts_per||50;
+    $('st-redeempts').value=s.redeem_pts||50;
+    $('st-redeemval').value=s.redeem_val==null?5:s.redeem_val;
+    $('st-cardpfx').value=s.card_pfx||'';
+  }).catch(function(e){ toast('Settings failed to load: '+e.message, 4000, '#e74c3c'); });
+}
+function saveStoreSettings(){
+  var row={
+    store_id:CFG.storeId,
+    name:$('st-name').value.trim()||null, addr:$('st-addr').value.trim()||null,
+    tin:$('st-tin').value.trim()||null, phrase:$('st-phrase').value.trim()||null,
+    serial:$('st-serial').value.trim()||null, min:$('st-min').value.trim()||null,
+    permit:$('st-permit').value.trim()||null, vat_reg:$('st-vatreg').value,
+    till:$('st-till').value.trim()||null, ret_days:parseInt($('st-retdays').value)||0,
+    theme_color:$('st-theme').value, roll_mm:parseInt($('st-roll').value)||80,
+    pts_per:parseInt($('st-ptsper').value)||50, redeem_pts:parseInt($('st-redeempts').value)||50,
+    redeem_val:r2($('st-redeemval').value), card_pfx:$('st-cardpfx').value.trim()||null,
+    updated_at:new Date().toISOString()
+  };
+  api('store_settings',{method:'POST', headers:{'Prefer':'resolution=merge-duplicates,return=minimal'}, body:JSON.stringify([row])})
+    .then(function(){
+      toast('Saved \u2014 every till picks this up within about 20 seconds');
+      DASH_SEED.name=row.name||DASH_SEED.name;
+      $('tbStoreName').textContent=DASH_SEED.name||'My Store';
+    })
+    .catch(function(e){ toast('Save failed: '+e.message, 4000, '#e74c3c'); });
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   DANGER ZONE \u2014 permanently erase test data from the cloud
+   Deletes every row this store has in sales, stock_moves, point_moves
+   and approvals. Products, customers, discounts, terminals and
+   store_settings are untouched \u2014 those are configuration, not
+   transaction history, and clearing them would undo real setup work.
+══════════════════════════════════════════════════════════════════ */
+function wipeTestDataModal(){
+  openModal('<div class="mbox">'+mHead('&#9888; Erase test data from the cloud')+
+    '<div class="warnbox">This deletes every sale, stock movement, point movement and approval record '+
+    'for <b>'+esc(DASH_SEED.name||'this store')+'</b> from Supabase, permanently, on every till. There is no undo.</div>'+
+    '<div class="fg"><label>Type the store name to confirm: '+esc(DASH_SEED.name||'')+'</label>'+
+    '<input id="wipe-confirm" autocomplete="off" placeholder="'+esc(DASH_SEED.name||'')+'" /></div>'+
+    '<button class="btn btn-r btn-full" id="wipe-btn" onclick="doWipeTestData()">Permanently erase from the cloud</button></div>');
+}
+function doWipeTestData(){
+  var typed=($('wipe-confirm').value||'').trim();
+  var expect=(DASH_SEED.name||'').trim();
+  if(!expect){ toast('Store name is not set \u2014 save it under Store information first', 3200, '#e74c3c'); return; }
+  if(typed!==expect){ toast('That does not match the store name exactly', 2400, '#e74c3c'); return; }
+  var btn=$('wipe-btn'); btn.disabled=true; btn.innerHTML='<span class="spin"></span> Erasing\u2026';
+  var tables=['sales','stock_moves','point_moves','approvals'];
+  var results=[];
+  var sid=encodeURIComponent(CFG.storeId);
+  tables.reduce(function(chain, t){
+    return chain.then(function(){
+      return api(t+'?store_id=eq.'+sid, {method:'DELETE', headers:{'Prefer':'return=minimal'}})
+        .then(function(){ results.push(t+': done'); })
+        .catch(function(e){ results.push(t+': FAILED \u2014 '+e.message); });
+    });
+  }, Promise.resolve()).then(function(){
+    closeModal();
+    var failed=results.filter(function(r){ return r.indexOf('FAILED')>-1; });
+    if(failed.length){
+      alert('Some tables did not clear:\n'+results.join('\n')+'\n\nSafe to run again \u2014 deleting an already-empty table is a no-op.');
+    } else {
+      toast('Cloud test data erased for '+expect, 3000, '#2ecc71');
+    }
+    DATA.sales=[]; DATA.approvals=[]; DATA.daily=[];
+    refreshAll(); loadSales();
+  });
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   REPORTS
+══════════════════════════════════════════════════════════════════ */
+function dlFile(name, text){
+  var blob=new Blob(['\ufeff'+text], {type:'text/csv;charset=utf-8'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download=name;
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+}
+function reportRange(){
+  var from=$('repFrom').value||daysAgoISO(30), to=$('repTo').value||todayISO();
+  return {from:from, to:to};
+}
+function exportReportSales(){
+  var rg=reportRange();
+  apiJson('sales?store_id=eq.'+encodeURIComponent(CFG.storeId)+'&select=*'+
+    '&at=gte.'+encodeURIComponent(rg.from+'T00:00:00')+'&at=lte.'+encodeURIComponent(rg.to+'T23:59:59')+'&order=at.asc&limit=5000')
+    .then(function(rows){
+      if(!rows.length){ toast('No sales in that range', 2200, '#f1c40f'); return; }
+      var head=['invoice','date','till','type','cashier','total'];
+      var body=[head.join(',')].concat(rows.map(function(s){
+        return [s.inv,s.at,s.till_id,s.type,s.cashier||'',r2(s.total)].map(function(v){ return '"'+String(v).replace(/"/g,'""')+'"'; }).join(',');
+      }));
+      dlFile('sales_'+rg.from+'_to_'+rg.to+'.csv', body.join('\r\n'));
+    }).catch(function(e){ toast('Export failed: '+e.message, 4000, '#e74c3c'); });
+}
+function exportReportDaily(){
+  var rg=reportRange();
+  apiJson('daily_by_store?store_id=eq.'+encodeURIComponent(CFG.storeId)+'&select=*&biz_date=gte.'+rg.from+'&biz_date=lte.'+rg.to+'&order=biz_date.asc')
+    .then(function(rows){
+      if(!rows.length){ toast('No data in that range', 2200, '#f1c40f'); return; }
+      var head=['date','sales_count','gross','returns','voids'];
+      var body=[head.join(',')].concat(rows.map(function(d){
+        return [d.biz_date,d.sales_count,r2(d.gross),r2(d.returns),r2(d.voids)].join(',');
+      }));
+      dlFile('daily_summary_'+rg.from+'_to_'+rg.to+'.csv', body.join('\r\n'));
+    }).catch(function(e){ toast('Export failed: '+e.message, 4000, '#e74c3c'); });
+}
+function exportReportStock(){
+  if(!DATA.products.length){ loadStock(); toast('Loading stock \u2014 try again in a moment', 2200); return; }
+  var head=['code','barcode','name','price','cost','stock','reorder_level'];
+  var body=[head.join(',')].concat(DATA.products.map(function(p){
+    return [p.code||'',p.bc,p.name,p.price,p.cost,p.stock,p.rl||5].map(function(v){ return '"'+String(v).replace(/"/g,'""')+'"'; }).join(',');
+  }));
+  dlFile('stock_'+todayISO()+'.csv', body.join('\r\n'));
+}
+function exportReportCustomers(){
+  if(!DATA.customers.length){ loadCustomers(); toast('Loading customers \u2014 try again in a moment', 2200); return; }
+  var head=['name','card','phone','points'];
+  var body=[head.join(',')].concat(DATA.customers.map(function(c){
+    return [c.name,c.card||'',c.phone||'',c.points||0].map(function(v){ return '"'+String(v).replace(/"/g,'""')+'"'; }).join(',');
+  }));
+  dlFile('customers_'+todayISO()+'.csv', body.join('\r\n'));
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   MODAL + MISC HELPERS
+══════════════════════════════════════════════════════════════════ */
+function mHead(title){ return '<div class="mhead"><span class="mtitle">'+title+'</span><button class="mx" onclick="closeModal()">&#10005;</button></div>'; }
+function openModal(html){ var mw=$('mw'); mw.innerHTML=html; mw.classList.add('on'); }
+function closeModal(){ var mw=$('mw'); mw.classList.remove('on'); mw.innerHTML=''; }
+document.getElementById('mw').addEventListener('click', function(e){ if(e.target===this) closeModal(); });
+document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeModal(); });
+function uuidv4(){
+  if(window.crypto && crypto.randomUUID) return crypto.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c){
+    var r=Math.random()*16|0; return (c==='x'?r:(r&0x3|0x8)).toString(16);
+  });
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════════════════════════ */
+(function init(){
+  if(!CFG.url || !CFG.key || !CFG.storeId){ showSetup(false); }
+  else { showLogin(); }
+  var li=$('li-pass');
+  if(li) li.addEventListener('keydown', function(e){ if(e.key==='Enter') doLoginOrRegister(); });
+  var su=$('su-store');
+  if(su) su.addEventListener('keydown', function(e){ if(e.key==='Enter') saveSetup(); });
+  var today=todayISO();
+  var fromDefault=daysAgoISO(30);
+  if($('repFrom')) $('repFrom').value=fromDefault;
+  if($('repTo')) $('repTo').value=today;
+})();
+</script>
+</body>
+</html>
